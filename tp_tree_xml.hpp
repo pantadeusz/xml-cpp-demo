@@ -18,11 +18,10 @@ using element_t = std::variant<text_t, tag_t>; // element variant
 FUNCTIONS:
 
 inline tree_elem_t<element_t> text_to_xml(const std::string &xml_text);
-inline tree_elem_t<element_t> text_to_xml_with_entities(const std::string &xml_text);
+inline tree_elem_t<element_t> text_to_xml_with_entities(const std::string
+&xml_text);
 
 */
-
-
 
 #include <functional>
 #include <iostream>
@@ -120,6 +119,8 @@ namespace helpers {
 /**
  * @brief parses xml string into tree of strings - elements in < and >, and
  * other parts
+ * 
+ * TODO: too big recurrence in regex parsing
  */
 auto simple_parse_xml = [](std::string xmltxt, auto on_fragment) {
   static const std::string regex_string =
@@ -145,6 +146,7 @@ auto string_to_tree = [](auto xml_string) {
   simple_parse_xml(xml_string, [&elements, &current_element,
                                 &parents](std::string s) {
     if (s.size()) {
+      std::cout << "EEE::" <<s<< std::endl;
       if ((s.size() > 2) && (s[0] == '<') && (s.back() == '>') && (s[1] == '/'))
         current_element = parents.at(current_element);
       else {
@@ -159,7 +161,7 @@ auto string_to_tree = [](auto xml_string) {
   return elements;
 };
 
-auto entities_convert = [](const std::string &str) ->std::string {
+auto entities_convert = [](const std::string &str) -> std::string {
   static std::map<std::string, std::string> entity = []() {
     std::map<std::string, std::string> entity;
     entity["&nbsp;"] = " ";
@@ -206,65 +208,73 @@ auto entities_convert = [](const std::string &str) ->std::string {
   return ret.str();
 };
 
-auto str_to_element = [](const std::string &txt) ->element_t {
+auto str_to_element = [](const std::string &txt) -> element_t {
   element_t ret;
   if ((txt.front() == '<') && (txt.back() == '>')) {
-    std::string name;
-    std::string value;
-    std::size_t p = 1;
-    // go to next important fragment (skip spaces)
-    auto skip_white_space = [&]() {
-      while ((p < txt.size()) && ((txt[p] == ' ') || (txt[p] == '\t') ||
-                                  (txt[p] == '\n') || (txt[p] == '\r')))
-        p++;
-    };
-    // extract string into name
-    auto _name = [&]() {
-      skip_white_space();
-      int a = p;
-      while ((p < txt.size()) &&
-             (((txt[p] >= '-') && (txt[p] <= ':')) || ((txt[p] == '!')) ||
-              ((txt[p] >= '@') && (txt[p] <= 'z'))))
-        p++;
-      name = txt.substr(a, p - a);
-    };
-    // extract string into value. Interpret equal sign properly
-    auto _value = [&]() {
-      value = "";
-      while ((p < txt.size()) && (txt[p] != '='))
-        p++;
-      skip_white_space();
-      if (p >= txt.size()) {
-        return;
-      }
-      p++;
-      int a = p;
-      // std::cout << "p " << p << " = " << txt[p] << std::endl;
-      if ((p >= txt.size()) || ((txt[p] != '"') && (txt[p - 1] != '\''))) {
+    if (txt[1] == '!') {
+      tag_t ret_tag;
+      ret_tag.tag = txt;
+      ret = ret_tag;
+    } else {
+
+      std::string name;
+      std::string value;
+      std::size_t p = 1;
+      // go to next important fragment (skip spaces)
+      auto skip_white_space = [&]() {
+        while ((p < txt.size()) && ((txt[p] == ' ') || (txt[p] == '\t') ||
+                                    (txt[p] == '\n') || (txt[p] == '\r')))
+          p++;
+      };
+      // extract string into name
+      auto _name = [&]() {
+        skip_white_space();
+        int a = p;
+        while ((p < txt.size()) &&
+               (((txt[p] >= '-') && (txt[p] <= ':')) || ((txt[p] == '!')) ||
+                ((txt[p] >= '@') && (txt[p] <= 'z'))))
+          p++;
+        name = txt.substr(a, p - a);
+      };
+      // extract string into value. Interpret equal sign properly
+      auto _value = [&]() {
         value = "";
-        return;
-      }
-      p++;
-      value = "";
-      while ((p < txt.size()) && (txt[p] != txt[a])) {
-        value = value + ((txt[p] == '\\') ? txt[p + 1] : txt[p]);
-        p = p + ((txt[p] == '\\') ? 2 : 1);
-      }
-      // std::cout << "VALUE (" << a << "-" << p << "): " << value << std::endl;
-    };
-    skip_white_space();
-    _name();
-    tag_t ret_tag;
-    ret_tag.tag = name;
-    while (p < txt.size()) {
+        while ((p < txt.size()) && (txt[p] != '='))
+          p++;
+        skip_white_space();
+        if (p >= txt.size()) {
+          return;
+        }
+        p++;
+        int a = p;
+        // std::cout << "p " << p << " = " << txt[p] << std::endl;
+        if ((p >= txt.size()) || ((txt[p] != '"') && (txt[p - 1] != '\''))) {
+          value = "";
+          return;
+        }
+        p++;
+        value = "";
+        while ((p < txt.size()) && (txt[p] != txt[a])) {
+          value = value + ((txt[p] == '\\') ? txt[p + 1] : txt[p]);
+          p = p + ((txt[p] == '\\') ? 2 : 1);
+        }
+        // std::cout << "VALUE (" << a << "-" << p << "): " << value <<
+        // std::endl;
+      };
+      skip_white_space();
       _name();
-      _value();
-      if (name.size() > 0) {
-        ret_tag.attr[name] = value;
+      tag_t ret_tag;
+      ret_tag.tag = name;
+      while (p < txt.size()) {
+        _name();
+        _value();
+        if (name.size() > 0) {
+          ret_tag.attr[name] = value;
+        }
+        p++;
       }
-      p++;
+      ret = ret_tag;
     }
-    ret = ret_tag;
   } else {
     ret = txt;
   }
@@ -279,7 +289,8 @@ inline tree_elem_t<element_t> text_to_xml(const std::string &xml_text) {
       elements, [](auto &a, auto d) { return helpers::str_to_element(a); });
 }
 
-inline tree_elem_t<element_t> text_to_xml_with_entities(const std::string &xml_text) {
+inline tree_elem_t<element_t>
+text_to_xml_with_entities(const std::string &xml_text) {
   auto elements = text_to_xml(xml_text);
   return transform_tree<element_t, element_t>(
       elements, [](const auto &a, int d) {
@@ -300,5 +311,3 @@ inline tree_elem_t<element_t> text_to_xml_with_entities(const std::string &xml_t
 
 } // namespace xml
 } // namespace tp
-
-
