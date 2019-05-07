@@ -211,15 +211,14 @@ auto string_to_tree = [](auto xml_string) {
 };
 
 auto entities_convert = [](const std::string &str) -> std::string {
-  static std::map<std::string, std::string> xml_entities = []() {
-    std::map<std::string, std::string> xml_entities = {
+  static auto xml_entities = []() -> std::map<std::string, std::string> {
+    return {
         {"&nbsp;", " "},  {"&lt;", "<"},    {"&gt;", ">"},   {"&amp;", "&"},
         {"&quot;", "\""}, {"&apos;", "'"},  {"&cent;", "¢"}, {"&pound;", "£"},
         {"&yen;", "¥"},   {"&euro;", "€"},  {"&copy;", "©"}, {"&reg;", "®"},
         {"&#160;", " "},  {"&#60;", "<"},   {"&#62;", ">"},  {"&#38;", "&"},
         {"&#34;", "\""},  {"&#39;", "'"},   {"&#162;", "¢"}, {"&#163;", "£"},
         {"&#165;", "¥"},  {"&#8364;", "€"}, {"&#169;", "©"}, {"&#174;", "®"}};
-    return xml_entities;
   }();
   std::stringstream ret;
   std::string stringfrag;
