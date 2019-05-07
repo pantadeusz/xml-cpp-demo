@@ -104,11 +104,11 @@ using element_t = std::variant<text_t, tag_t>; // element variant
 inline std::ostream &operator<<(std::ostream &o, const element_t &e) {
   //    o << "<(" << e.type << ")" << e.tag << ">" << e.value;
   if (e.index() == 0) {
-    o << "*" << std::get<0>(e) << "*";
+    o << "" << std::get<0>(e) << "";
   } else {
-    o << "<" << std::get<1>(e).tag << " ";
+    o << "<\033[34m" << std::get<1>(e).tag << "\033[30m";
     for (auto &[k, v] : std::get<1>(e).attr) {
-      o << " `" << k << "`===`" << v << "`";
+      o << " \033[31m" << k << "\033[0m=\033[32m" << v << "\033[0m";
     }
     o << ">";
   }
@@ -195,7 +195,7 @@ auto string_to_tree = [](auto xml_string) {
   simple_parse_xml(xml_string, [&elements, &current_element,
                                 &parents](std::string s) {
     if (s.size()) {
-      std::cout << "EEE::" << s << std::endl;
+//      std::cout << "EEE::" << s << std::endl;
       if ((s.size() > 2) && (s[0] == '<') && (s.back() == '>') && (s[1] == '/'))
         current_element = parents.at(current_element);
       else {
