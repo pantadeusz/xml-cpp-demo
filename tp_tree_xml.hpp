@@ -125,7 +125,7 @@ namespace helpers {
 auto simple_parse_xml = [](const std::string xmltxt0, auto on_fragment) {
   static const std::string regex_string = R"([<][!][-][-].*[-][-][>])";
   static const std::regex r(regex_string);
-  std::string xmltxt =   std::regex_replace(xmltxt0, r, "");
+  std::string xmltxt = std::regex_replace(xmltxt0, r, "");
   char in_string = 0;
   char escape = 0;
   std::string fragment = "";
@@ -164,7 +164,7 @@ auto simple_parse_xml = [](const std::string xmltxt0, auto on_fragment) {
               in_string = 0;
           } else
             fragment += c;
-            escape = c;
+          escape = c;
         }
       } else if (c == '>') {
         fragment += c;
@@ -195,7 +195,7 @@ auto string_to_tree = [](auto xml_string) {
   simple_parse_xml(xml_string, [&elements, &current_element,
                                 &parents](std::string s) {
     if (s.size()) {
-//      std::cout << "EEE::" << s << std::endl;
+      //      std::cout << "EEE::" << s << std::endl;
       if ((s.size() > 2) && (s[0] == '<') && (s.back() == '>') && (s[1] == '/'))
         current_element = parents.at(current_element);
       else {
@@ -212,31 +212,13 @@ auto string_to_tree = [](auto xml_string) {
 
 auto entities_convert = [](const std::string &str) -> std::string {
   static std::map<std::string, std::string> entity = []() {
-    std::map<std::string, std::string> entity;
-    entity["&nbsp;"] = " ";
-    entity["&lt;"] = "<";
-    entity["&gt;"] = ">";
-    entity["&amp;"] = "&";
-    entity["&quot;"] = "\"";
-    entity["&apos;"] = "'";
-    entity["&cent;"] = "¢";
-    entity["&pound;"] = "£";
-    entity["&yen;"] = "¥";
-    entity["&euro;"] = "€";
-    entity["&copy;"] = "©";
-    entity["&reg;"] = "®";
-    entity["&#160;"] = " ";
-    entity["&#60;"] = "<";
-    entity["&#62;"] = ">";
-    entity["&#38;"] = "&";
-    entity["&#34;"] = "\"";
-    entity["&#39;"] = "'";
-    entity["&#162;"] = "¢";
-    entity["&#163;"] = "£";
-    entity["&#165;"] = "¥";
-    entity["&#8364;"] = "€";
-    entity["&#169;"] = "©";
-    entity["&#174;"] = "®";
+    std::map<std::string, std::string> entity = {
+        {"&nbsp;", " "},  {"&lt;", "<"},    {"&gt;", ">"},   {"&amp;", "&"},
+        {"&quot;", "\""}, {"&apos;", "'"},  {"&cent;", "¢"}, {"&pound;", "£"},
+        {"&yen;", "¥"},   {"&euro;", "€"},  {"&copy;", "©"}, {"&reg;", "®"},
+        {"&#160;", " "},  {"&#60;", "<"},   {"&#62;", ">"},  {"&#38;", "&"},
+        {"&#34;", "\""},  {"&#39;", "'"},   {"&#162;", "¢"}, {"&#163;", "£"},
+        {"&#165;", "¥"},  {"&#8364;", "€"}, {"&#169;", "©"}, {"&#174;", "®"}};
     return entity;
   }();
   std::stringstream ret;
