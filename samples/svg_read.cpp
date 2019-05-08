@@ -82,28 +82,28 @@ interpret_svg_path_command(point_2d_t current_point,
                            std::pair<char, std::vector<double>> command,
                            plot_step_callback_t on_plot_step, double dt,
                            point_2d_t *current_shape_start_point) {
-  auto start_point = current_point;
   auto &[c, args] = command;
-  // std::cout << c;
-  //  for (auto v : args) {
-  //   std::cout << " " << v;
-  // }
   std::cout << std::endl;
   if ((c == 'm') || (c == 'l') || (c == 'c') || (c == 's')) {
-    c = c - 'a' + 'A';
     int i = 1;
     for (auto &e : args)
-      e = e + start_point[++i % 2];
+      e = e + current_point[++i % 2];
+  } else if (c == 'h') {
+    for (auto &e : args)
+      e = e + current_point[0];
+  } else if (c == 'v') {
+    for (auto &e : args)
+      e = e + current_point[1];
   }
+  if ((c >= 'a') && (c <= 'z')) c = c - 'a' + 'A';
+
   switch (c) {
   case 'M': {
     while (args.size() >= 2) {
-
       current_point = path_move_to(GOTO, current_point,
                                    {args.at(0), args.at(1)}, on_plot_step);
       args = std::vector<double>(args.begin() + 2, args.end());
     }
-    if (args.size() > 0) std::cerr << "WRONG!!" << std::endl;
     *current_shape_start_point = current_point;
     return current_point;
   }
@@ -113,7 +113,6 @@ interpret_svg_path_command(point_2d_t current_point,
                                    {args.at(0), args.at(1)}, on_plot_step);
       args = std::vector<double>(args.begin() + 2, args.end());
     }
-    if (args.size() > 0) std::cerr << "WRONG!!" << std::endl;
     return current_point;
   }
   case 'C': {
@@ -122,7 +121,6 @@ interpret_svg_path_command(point_2d_t current_point,
           path_bezier_cubic(PLOT, current_point, args, on_plot_step, dt);
       args = std::vector<double>(args.begin() + 6, args.end());
     }
-    if (args.size() > 0) std::cerr << "WRONG!!" << std::endl;
     return current_point;
   }
   case 'S': {
@@ -131,7 +129,6 @@ interpret_svg_path_command(point_2d_t current_point,
                                    {args.at(2), args.at(3)}, on_plot_step);
       args = std::vector<double>(args.begin() + 4, args.end());
     }
-    if (args.size() > 0) std::cerr << "WRONG!!" << std::endl;
     return current_point;
   }
   case 'V': {
@@ -140,14 +137,20 @@ interpret_svg_path_command(point_2d_t current_point,
                                    {current_point[0], args.at(0)}, on_plot_step);
       args = std::vector<double>(args.begin() + 1, args.end());
     }
-    if (args.size() > 0) std::cerr << "WRONG!!" << std::endl;
+    return current_point;
+  }
+  case 'H': {
+    while (args.size() >= 1) {
+      current_point = path_move_to(PLOT, current_point,
+                                   { args.at(0),current_point[1]}, on_plot_step);
+      args = std::vector<double>(args.begin() + 1, args.end());
+    }
     return current_point;
   }
   case 'z':
   case 'Z':
     return path_move_to(PLOT, current_point, *current_shape_start_point,
                         on_plot_step);
-    // return start_point;
   default: {
     std::cerr << c;
     for (auto v : args) {
@@ -158,6 +161,7 @@ interpret_svg_path_command(point_2d_t current_point,
   }
   }
 };
+
 
 int main(int argc, char **argv) {
   using namespace tp::xml;
@@ -198,15 +202,9 @@ int main(int argc, char **argv) {
                   switch (sttp) {
                   case GOTO:
                     if (!(current_point == p)) {
-                      std::cout << "G0"
-                                << "X" << current_point[0] << "Y"
-                                << -current_point[1] << "Z" << fly_high
-                                << std::endl;
-                      std::cout << "G0"
-                                << "X" << p[0] << "Y" << -p[1] << std::endl;
-                      std::cout << "G0"
-                                << "X" << p[0] << "Y" << -p[1] << "Z" << 0.0
-                                << std::endl;
+                      std::cout << "G0Z" << fly_high << std::endl;
+                      std::cout << "G0" << "X" << p[0] << "Y" << -p[1] << std::endl;
+                      std::cout << "G0"<< "Z" << 0.0 << std::endl;
                       current_point_3d[2] = 0.0;
                     }
                     break;
@@ -217,8 +215,7 @@ int main(int argc, char **argv) {
                                   << "Z" << work_depth << std::endl;
                         current_point_3d[2] = work_depth;
                       }
-                      std::cout << "G1"
-                                << "X" << p[0] << "Y" << -p[1] << std::endl;
+                      std::cout << "G1" << "X" << p[0] << "Y" << -p[1] << std::endl;
                     }
                     break;
                   }
@@ -228,7 +225,6 @@ int main(int argc, char **argv) {
               },
               0.05, &current_shape_start_point);
         }
-        //  std::cout << " " << c << ":" << n.size();
         std::cout << std::endl;
       }
     }
