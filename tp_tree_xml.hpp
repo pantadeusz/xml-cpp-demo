@@ -106,7 +106,7 @@ inline std::ostream &operator<<(std::ostream &o, const element_t &e) {
   if (e.index() == 0) {
     o << "" << std::get<0>(e) << "";
   } else {
-    o << "<\033[34m" << std::get<1>(e).tag << "\033[30m";
+    o << "<\033[34m" << std::get<1>(e).tag << "\033[0m";
     for (auto &[k, v] : std::get<1>(e).attr) {
       o << " \033[31m" << k << "\033[0m=\033[32m" << v << "\033[0m";
     }
